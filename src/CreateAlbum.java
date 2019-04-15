@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -91,8 +92,15 @@ public class CreateAlbum extends javax.swing.JFrame {
                     while(rs.next()){
                         albumID = rs.getInt("MAX(AlbumID)");
                     }
-
-                    albums.add(new Album(albumID, albumName, datefor.format(new Date()),file,getuser().getfirstname() + " " + getuser().getlastname()));
+                    PreparedStatement getBlobStatement = getcon().prepareStatement("SELECT * FROM databasedc.albumdc WHERE AlbumID = ?");
+                    getBlobStatement.setInt(1, albumID);
+                    ResultSet getBlobRS = getBlobStatement.executeQuery();
+                    Blob blob = null;
+                    while(getBlobRS.next()){
+                        blob = getBlobRS.getBlob("AlbumCover");
+                    }
+                    
+                    albums.add(new Album(albumID, albumName, datefor.format(new Date()),blob,getuser().getfirstname() + " " + getuser().getlastname()));
                     owner.setAlbums(albums);
                     JOptionPane.showMessageDialog(null, "Album Created Successfully!");
                     owner.loadalbums();

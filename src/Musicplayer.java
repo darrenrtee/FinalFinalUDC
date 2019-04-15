@@ -68,6 +68,7 @@ public class Musicplayer extends javax.swing.JDialog {
         othericon();
         playicon();
         noloop();
+        
     }
     
     public void yesloop()
@@ -192,6 +193,7 @@ public class Musicplayer extends javax.swing.JDialog {
             }
             
             if(blob != null){
+                System.out.println("HELLO NAKAPASOK AKOOOOOOOOO!!!!");
                 test.setFile(temp);
                 lblName.setText(getsong().getTitle());
                 lblArtist.setText(getsong().getArtist());
@@ -236,12 +238,14 @@ public class Musicplayer extends javax.swing.JDialog {
             }
         });
 
+        btnFF.setEnabled(false);
         btnFF.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnFFActionPerformed(evt);
             }
         });
 
+        btnBK.setEnabled(false);
         btnBK.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBKActionPerformed(evt);
@@ -377,17 +381,23 @@ public class Musicplayer extends javax.swing.JDialog {
             if(test.playm.getisPlaying())
             {
                 test.pauseMusic();
+                btnBK.setEnabled(false);
+                btnFF.setEnabled(false);
                 playicon();
             }
             else if(test.playm.getisPaused())
             {
                 test.playMusic();
+                btnBK.setEnabled(true);
+                btnFF.setEnabled(true);
                 timeCounter.start();
                 pauseicon();
             }
             else
             {
                 test.playMusic();
+                btnBK.setEnabled(true);
+                btnFF.setEnabled(true);
                 timeCounter.start();
                 pauseicon();
             }
@@ -403,6 +413,8 @@ public class Musicplayer extends javax.swing.JDialog {
             timeCounter.stop();
             sldrSound.setValue(0);
             lblStartTime.setText("0:00");
+            btnBK.setEnabled(false);
+            btnFF.setEnabled(false);
             playicon();
         }
         else{

@@ -9,12 +9,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Blob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -42,8 +44,7 @@ public class Dashboard extends javax.swing.JFrame {
         clearall();
         icons();
         currplaylist = null;
-        yourplaylist = new ArrayList<>();
-        yoursongs = new ArrayList<>();
+        
     }
 
     public ArrayList<Song> getYoursongs() {
@@ -57,7 +58,9 @@ public class Dashboard extends javax.swing.JFrame {
     public void initializePlayer(){
         if(getuser().gettype().equals("Artist")){
             try {
-                initializeArtist();
+                albums = new ArrayList<>();
+                yourplaylist = new ArrayList<>();
+                yoursongs = new ArrayList<>();
                 loadplaylists();
                 loadplaylisttable();
                 loadalbums();
@@ -76,10 +79,7 @@ public class Dashboard extends javax.swing.JFrame {
         }
     }
     
-    public void initializeArtist(){
-        albums = new ArrayList<>();
-        
-    }
+    
     public void handleSearchResult(String name,String criteria){
         switch(criteria){
             case "Artist" :
@@ -100,9 +100,10 @@ public class Dashboard extends javax.swing.JFrame {
         albumT.setVisible(false);
         createalbumBtn.setVisible(false);
         jScrollPane4.setVisible(false);
-        albumsongT.setVisible(false);
+        uploadedSongsTable.setVisible(false);
         songtextLabel.setVisible(false);
         addsongtoplay.setVisible(false);
+        openalbumbtn1.setVisible(false);
     }
     
     public void loaduploadedsongs(){
@@ -110,31 +111,31 @@ public class Dashboard extends javax.swing.JFrame {
             Statement statement = getcon().createStatement();
             ResultSet result= statement.executeQuery("SELECT * FROM databasedc.song WHERE UserID = '"+getuser().getid()+"'");
           
-            DefaultTableModel modelp = (DefaultTableModel) albumsongT.getModel();
+            DefaultTableModel modelp = (DefaultTableModel) uploadedSongsTable.getModel();
             modelp.setRowCount(0);
             
             while(result.next()){
                 Director build = new Director();
                 if(result.getString("SongGenre").equals("Happy")){
                    build.setSongBuilder(new HappyBuilder());
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername());
+                   build.constructSong(result.getInt("SongID"), "", result.getString("SongTitle"), getuser().getusername());
                 }
                 else if(result.getString("SongGenre").equals("Sad")){
                    build.setSongBuilder(new SadBuilder());
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername());  
+                   build.constructSong(result.getInt("SongID"), "", result.getString("SongTitle"), getuser().getusername());  
                 }
                 else if(result.getString("SongGenre").equals("Senti")){
                    build.setSongBuilder(new SentiBuilder());
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername()); 
+                   build.constructSong(result.getInt("SongID"), "", result.getString("SongTitle"), getuser().getusername()); 
                 }
                 else{
                    build.setSongBuilder(new NoBuilder()); 
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername()); 
+                   build.constructSong(result.getInt("SongID"), "", result.getString("SongTitle"), getuser().getusername()); 
                 }
                 
                 yoursongs.add(build.getSong());
                 
-                modelp.insertRow(albumsongT.getRowCount(), new Object[]{
+                modelp.insertRow(uploadedSongsTable.getRowCount(), new Object[]{
                     result.getString("SongTitle"),
                     result.getString("SongGenre")
                 });
@@ -282,16 +283,15 @@ public class Dashboard extends javax.swing.JFrame {
         DefaultTableModel model = (DefaultTableModel) albumT.getModel();
         model.setRowCount(0);
         
-        Statement state;
+        Statement statement;
         try {
-            state = getcon().createStatement();
-            ResultSet result = state.executeQuery("SELECT * FROM databasedc.uploadalbum NATURAL JOIN databasedc.albumdc NATURAL JOIN databasedc.useraccount");
-            while(result.next())
+            statement = getcon().createStatement();
+            ResultSet rs = statement.executeQuery("SELECT * FROM databasedc.albumdc NATURAL JOIN databasedc.useraccount WHERE UserID = '"+getuser().getid()+"'");
+            
+            while(rs.next())
             {
                 model.insertRow(albumT.getRowCount(), new Object[]{
-                   result.getString("AlbumName"),
-                   result.getString("UserName"),
-                   result.getDate("UploadedDate")
+                    rs.getString("AlbumName")
                 });
             }
             
@@ -427,7 +427,7 @@ public class Dashboard extends javax.swing.JFrame {
                 
                 setalbumartist(albumT.getValueAt(albumT.getSelectedRow(), 1).toString());
                 
-                DefaultTableModel model = (DefaultTableModel) albumsongT.getModel();
+                DefaultTableModel model = (DefaultTableModel) uploadedSongsTable.getModel();
                 model.setRowCount(0);
 
                 for(int x=0; x<albumsongid.size(); x++)
@@ -436,7 +436,7 @@ public class Dashboard extends javax.swing.JFrame {
                     ResultSet resultdisplaysong = statedisplaysong.executeQuery("SELECT * FROM databasedc.song WHERE SongID = '"+albumsongid.get(x)+"'");
                     while(resultdisplaysong.next())
                     {
-                        model.insertRow(albumsongT.getRowCount(), new Object[]{
+                        model.insertRow(uploadedSongsTable.getRowCount(), new Object[]{
                             resultdisplaysong.getString("SongTitle")
                         });
                     }
@@ -547,7 +547,7 @@ public class Dashboard extends javax.swing.JFrame {
     
     public void addsongtoplay() // DONE
     {
-        if(albumsongT.getSelectedRow() < 0)
+        if(uploadedSongsTable.getSelectedRow() < 0)
             JOptionPane.showMessageDialog(null, "Please Select A Song in the Library");
         else
         {
@@ -560,7 +560,7 @@ public class Dashboard extends javax.swing.JFrame {
                     if(songlistT.getRowCount() == 0)
                     {
                         Statement statecheck = getcon().createStatement();
-                        ResultSet resultcheck = statecheck.executeQuery("SELECT * FROM databasedc.song WHERE SongTitle = '"+albumsongT.getValueAt(albumsongT.getSelectedRow(), 0).toString()+"' && SongArtist = '"+getalbumartist()+"'");
+                        ResultSet resultcheck = statecheck.executeQuery("SELECT * FROM databasedc.song WHERE SongTitle = '"+uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0).toString()+"' && SongArtist = '"+getalbumartist()+"'");
                         int songid=0;
                         while(resultcheck.next())
                         {
@@ -576,7 +576,7 @@ public class Dashboard extends javax.swing.JFrame {
                         boolean exists = false;
                         for(int x=0; x<songlistT.getRowCount(); x++)
                         {
-                            if((songlistT.getValueAt(x, 1).equals(albumsongT.getValueAt(albumsongT.getSelectedRow(), 0)) && songlistT.getValueAt(x, 2).equals(getalbumartist())))
+                            if((songlistT.getValueAt(x, 1).equals(uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0)) && songlistT.getValueAt(x, 2).equals(getalbumartist())))
                             {
                                 exists = true;
                                 break;
@@ -585,7 +585,7 @@ public class Dashboard extends javax.swing.JFrame {
                         if(!exists)
                         {
                              Statement statecheck = getcon().createStatement();
-                             ResultSet resultcheck = statecheck.executeQuery("SELECT * FROM databasedc.song WHERE SongTitle = '"+albumsongT.getValueAt(albumsongT.getSelectedRow(), 0).toString()+"' && SongArtist = '"+getalbumartist()+"'");
+                             ResultSet resultcheck = statecheck.executeQuery("SELECT * FROM databasedc.song WHERE SongTitle = '"+uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0).toString()+"' && SongArtist = '"+getalbumartist()+"'");
                              int songid=0;
                              while(resultcheck.next())
                              {
@@ -607,7 +607,7 @@ public class Dashboard extends javax.swing.JFrame {
         }
     }
     
-    public void deletesong() // DONE
+    public void deletesongfromplaylist() // DONE
     {
         if(songlistT.getSelectedRow() < 0)
             JOptionPane.showMessageDialog(null, "Please Select A Song", "No Selection!", JOptionPane.WARNING_MESSAGE);
@@ -637,6 +637,147 @@ public class Dashboard extends javax.swing.JFrame {
               loadsongstable();
             }
         }
+    }
+    public void deletesongfromuploaded(){
+        try {
+            if(uploadedSongsTable.getSelectedRow() < 0)
+                JOptionPane.showMessageDialog(null, "Please Select a Song First Before Deleting!");
+            
+            else{
+                int artistID = getuser().getid();
+                String songName = uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0).toString();
+                int songID = 0;
+                
+                for(int i = 0; i < albums.size(); i++) {
+                    for(int j = 0; j < albums.get(i).getSongs().size(); j++)
+                        if(albums.get(i).getSongs().get(j).getTitle().equals(songName)){
+                            songID = albums.get(i).getSongs().get(j).getid();
+                        
+                            Statement removeFromSong = getcon().createStatement();
+                            removeFromSong.execute("DELETE FROM databasedc.song WHERE UserID = '"+artistID+"' AND SongTitle = '"+songName+"'");
+
+                            Statement removeFromSongAlbum = getcon().createStatement();
+                            removeFromSongAlbum.execute("DELETE FROM databasedc.songalbum WHERE SongID = '"+songID+"'");
+
+                            Statement removeFromSongDetail = getcon().createStatement();
+                            removeFromSongDetail.execute("DELETE FROM databasedc.songdetail WHERE SongID = '"+songID+"'");
+                            
+                            albums.get(i).getSongs().remove(j);
+                            break;
+                        }
+                }
+                
+                for(int i = 0; i < yourplaylist.size(); i++) {
+                    for(int j = 0; j < yourplaylist.get(i).getSongs().size(); j++)
+                        if(yourplaylist.get(i).getSongs().get(j).getTitle().equals(songName)){
+                            songID = yourplaylist.get(i).getSongs().get(j).getid();
+                        
+                            Statement removeFromSong = getcon().createStatement();
+                            removeFromSong.execute("DELETE FROM databasedc.song WHERE UserID = '"+artistID+"' AND SongTitle = '"+songName+"'");
+
+                            Statement removeFromSongAlbum = getcon().createStatement();
+                            removeFromSongAlbum.execute("DELETE FROM databasedc.songalbum WHERE SongID = '"+songID+"'");
+
+                            Statement removeFromSongDetail = getcon().createStatement();
+                            removeFromSongDetail.execute("DELETE FROM databasedc.songdetail WHERE SongID = '"+songID+"'");
+                            
+                            yourplaylist.get(i).getSongs().remove(j);
+                            break;
+                        }
+                }
+                
+                for(int i = 0; i < yoursongs.size(); i++) {
+                    if(yoursongs.get(i).getTitle().equals(songName)){
+                        songID = yoursongs.get(i).getid();
+
+                        Statement removeFromSong = getcon().createStatement();
+                        removeFromSong.execute("DELETE FROM databasedc.song WHERE UserID = '"+artistID+"' AND SongTitle = '"+songName+"'");
+
+                        Statement removeFromSongAlbum = getcon().createStatement();
+                        removeFromSongAlbum.execute("DELETE FROM databasedc.songalbum WHERE SongID = '"+songID+"'");
+
+                        Statement removeFromSongDetail = getcon().createStatement();
+                        removeFromSongDetail.execute("DELETE FROM databasedc.songdetail WHERE SongID = '"+songID+"'");
+
+                        yoursongs.remove(i);
+                        break;
+                    }
+                }
+                
+                if(getplaylist() != null) {
+                    DefaultTableModel songsInThePlaylistModel = (DefaultTableModel)songlistT.getModel();
+                    songsInThePlaylistModel.setRowCount(0);
+                    
+                    for(int i = 0; i < getplaylist().getSongs().size(); i++){
+                        int rowCount = i + 1;
+                        songsInThePlaylistModel.insertRow(songlistT.getRowCount(), new Object[]{
+                            rowCount,
+                            getplaylist().getSongs().get(i).getTitle().trim(),
+                            getplaylist().getSongs().get(i).getArtist().trim(),
+                            getplaylist().getSongs().get(i).getGenre().getGenre().trim(),
+                            getplaylist().getSongs().get(i).getAlbum().trim()
+                        });
+                    }
+                }
+                
+                DefaultTableModel uploadedSongsTableModel = (DefaultTableModel)uploadedSongsTable.getModel();
+                uploadedSongsTableModel.setRowCount(0);
+                
+                for(int i = 0; i < yoursongs.size(); i++){
+                    uploadedSongsTableModel.insertRow(songlistT.getRowCount(), new Object[]{
+                        yoursongs.get(i).getTitle(),
+                        yoursongs.get(i).getGenre().getGenre()
+                    });
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public void  deletealbum(){
+        if(albumT.getSelectedRow() < 0)
+            JOptionPane.showMessageDialog(null, "Select An Album First Before Deleting!");
+        else{
+            boolean empty = false;
+            for(int i = 0; i < albums.size(); i++){
+                if(albums.get(i).getName().equals(albumT.getValueAt(albumT.getSelectedRow(), 0).toString())){
+                    if(albums.get(i).getSongs().isEmpty()){
+                        empty = true;
+                        break;
+                    }
+                }
+            }
+            
+            if(!empty)
+                JOptionPane.showMessageDialog(null, "Album must be empty first before deleting!");
+            else{    
+                for(Iterator<Album> itr = albums.iterator(); itr.hasNext();){
+                    Album tempAlbum = itr.next();
+
+                    if(tempAlbum.getName().equals(albumT.getValueAt(albumT.getSelectedRow(), 0).toString())){
+
+                        try {
+                            Statement statement = getcon().createStatement();
+                            statement.execute("DELETE FROM databasedc.albumdc WHERE AlbumID = '"+tempAlbum.getid()+"'");
+                            
+                            Statement deleteFromGlobalState = getcon().createStatement();
+                            deleteFromGlobalState.execute("DELETE FROM databasedc.uploadalbum WHERE AlbumID = '"+tempAlbum.getid()+"'");
+                            
+                            itr.remove();
+                            
+                            JOptionPane.showMessageDialog(null, "Album has been deleted!");
+                            loadalbumtable();
+                            break;
+                        } catch (SQLException ex) {
+                            Logger.getLogger(Dashboard.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        }
+       
+       
     }
     
     public void deleteplaylist() // DONE
@@ -857,11 +998,15 @@ public class Dashboard extends javax.swing.JFrame {
             window.setcon(getcon());
             window.setalbum(getalbum());
             window.initialize();
+            window.setowner(this);
+            window.setAlbums(albums);
             window.setVisible(true);
         }
     }
     
     public void loadalbums() throws FileNotFoundException{
+        albums.clear();
+        
         try {
             Statement statement = getcon().createStatement();
             ResultSet rs = statement.executeQuery("SELECT * FROM databasedc.albumdc NATURAL JOIN databasedc.useraccount WHERE UserID = '"+getuser().getid()+"'");
@@ -869,17 +1014,40 @@ public class Dashboard extends javax.swing.JFrame {
             DefaultTableModel modelp = (DefaultTableModel) albumT.getModel();
             modelp.setRowCount(0);
             
-            
             while(rs.next()){
-                File file = new File("SamplePicture.png");
                 Blob blob = rs.getBlob("AlbumCover");
-                InputStream in = blob.getBinaryStream();
-                OutputStream out = new FileOutputStream(file);
-                byte[] bytes = blob.getBytes(1,(int)blob.length());
-                out.write(bytes);
-                out.close();
                 
-                albums.add(new Album(rs.getInt("AlbumID"), rs.getString("AlbumName"), rs.getString("AlbumDate"), file, rs.getString("FirstName") + " " + rs.getString("LastName")));
+                
+                albums.add(new Album(rs.getInt("AlbumID"), rs.getString("AlbumName"), rs.getString("AlbumDate"), blob, rs.getString("FirstName") + " " + rs.getString("LastName")));
+                
+                PreparedStatement loadSongsStatement = getcon().prepareStatement("SELECT * FROM databasedc.song NATURAL JOIN databasedc.songalbum WHERE UserID = ? AND AlbumID = ?");
+                loadSongsStatement.setInt(1, getuser().getid());
+                loadSongsStatement.setInt(2, rs.getInt("AlbumID"));
+                
+                ResultSet loadSongsRS = loadSongsStatement.executeQuery();
+                
+                while(loadSongsRS.next()){
+                    Director build = new Director();
+                    if(loadSongsRS.getString("SongGenre").equals("Happy")){
+                       build.setSongBuilder(new HappyBuilder());
+                       build.constructSong(loadSongsRS.getInt("SongID"), albums.get(albums.size() - 1).getName(), loadSongsRS.getString("SongTitle"), getuser().getusername());
+                    }
+                    else if(loadSongsRS.getString("SongGenre").equals("Sad")){
+                       build.setSongBuilder(new SadBuilder());
+                       build.constructSong(loadSongsRS.getInt("SongID"), albums.get(albums.size() - 1).getName(), loadSongsRS.getString("SongTitle"), getuser().getusername());  
+                    }
+                    else if(loadSongsRS.getString("SongGenre").equals("Senti")){
+                       build.setSongBuilder(new SentiBuilder());
+                       build.constructSong(loadSongsRS.getInt("SongID"), albums.get(albums.size() - 1).getName(), loadSongsRS.getString("SongTitle"), getuser().getusername()); 
+                    }
+                    else{
+                       build.setSongBuilder(new NoBuilder()); 
+                       build.constructSong(loadSongsRS.getInt("SongID"), albums.get(albums.size() - 1).getName(), loadSongsRS.getString("SongTitle"), getuser().getusername()); 
+                    }
+                    build.getSong().setTimesPlayed(0);
+
+                    albums.get(albums.size() - 1).addSong(build.getSong());
+                }
                 
                 modelp.insertRow(albumT.getRowCount(), new Object[]{
                     rs.getString("AlbumName")
@@ -887,52 +1055,74 @@ public class Dashboard extends javax.swing.JFrame {
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
-        } catch (IOException ex) {
-            Logger.getLogger(Dashboard.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    public void loadalbumsong() // UPDATES SONGS INSIDE THE ALBUM
-    {
-        getalbum().cleararray();
+    public void updateuploadedsongstable() {
+        
+        DefaultTableModel model = (DefaultTableModel) uploadedSongsTable.getModel();
+        model.setRowCount(0);
+        
+        for(Song song : yoursongs){
+            model.insertRow(uploadedSongsTable.getRowCount(), new Object[]{
+                song.getTitle(),
+                song.getGenre().getGenre()
+            });
+        }
+    }
+    
+    public void addtoAlbum(){
+             
         try {
-            Statement state = getcon().createStatement();
-            ResultSet result = state.executeQuery("SELECT * \n" +
-                                                  "FROM databasedc.songalbum NATURAL JOIN databasedc.song \n" +
-                                                  "WHERE AlbumID = '"+getalbum().getid()+"'");
+            boolean exists = false;
+            Statement checkExistStatement = getcon().createStatement();
+            ResultSet checkExistRS = checkExistStatement.executeQuery("SELECT * FROM databasedc.song NATURAL JOIN databasedc.songalbum WHERE UserID = '"+getuser().getid()+"' AND SongTitle = '"+uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0).toString()+"'");
             
-            while(result.next())
-            {
-                Director build = new Director();
-                if(result.getString("SongGenre").equals("Happy")){
-                   build.setSongBuilder(new HappyBuilder());
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername());
-                }
-                else if(result.getString("SongGenre").equals("Sad")){
-                   build.setSongBuilder(new SadBuilder());
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername());  
-                }
-                else if(result.getString("SongGenre").equals("Senti")){
-                   build.setSongBuilder(new SentiBuilder());
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername()); 
-                }
-                else{
-                   build.setSongBuilder(new NoBuilder()); 
-                   build.constructSong(result.getInt("SongID"), getalbum().getName(), result.getString("SongTitle"), getuser().getusername()); 
-                }
-                build.getSong().setTimesPlayed(result.getInt("SongPlayed"));
+            while(checkExistRS.next()){
+                exists = true;
+            }
+            
+            int albumID = 0;
+            int songID = 0;
+            
+            if(exists)
+                JOptionPane.showMessageDialog(null, "That song already exists in that album or is already a part of another album!", "Song exists",JOptionPane.WARNING_MESSAGE);
+            else{
+                Statement getAlbumIDStatement = getcon().createStatement();
+                ResultSet getAlbumIDRS = getAlbumIDStatement.executeQuery("SELECT AlbumID FROM databasedc.albumdc WHERE UserID = '"+getuser().getid()+"' AND AlbumName = '"+albumT.getValueAt(albumT.getSelectedRow(), 0).toString()+"'");
                 
-                if(result.getString("SongFav").equals("true"))
-                    build.getSong().setFavorite();
+                while(getAlbumIDRS.next()){
+                    albumID = getAlbumIDRS.getInt("AlbumID");
+                }
                 
-                getalbum().addSong(build.getSong());
+                Statement getSongIDStatement = getcon().createStatement();
+                ResultSet getSongIDRS = getSongIDStatement.executeQuery("SELECT SongID FROM databasedc.song WHERE UserID = '"+getuser().getid()+"' AND SongTitle = '"+uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0).toString()+"'");
+                
+                while(getSongIDRS.next()){
+                    songID = getSongIDRS.getInt("SongID");
+                }
+                
+                Statement insertStatement = getcon().createStatement();
+                insertStatement.execute("INSERT INTO databasedc.songalbum(AlbumID, SongID) VALUES('"+albumID+"', '"+songID+"')");
+              
+                JOptionPane.showMessageDialog(null, "Song successfully added into the album!");
+                
+                Song songtobeadded = null;
+                
+                for(int i = 0; i < yoursongs.size(); i++){
+                    if(yoursongs.get(i).getTitle().equals(uploadedSongsTable.getValueAt(uploadedSongsTable.getSelectedRow(), 0).toString()))
+                        songtobeadded = yoursongs.get(i);
+                }
+                
+                for(int i = 0; i < albums.size(); i++){
+                    if(albums.get(i).getName().equals(albumT.getValueAt(albumT.getSelectedRow(), 0).toString()))
+                        albums.get(i).addSong(songtobeadded);
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(Dashboard.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
     }
-    
-    
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -964,10 +1154,13 @@ public class Dashboard extends javax.swing.JFrame {
         viewprofbtn = new javax.swing.JButton();
         searchbtn = new javax.swing.JButton();
         jScrollPane4 = new javax.swing.JScrollPane();
-        albumsongT = new javax.swing.JTable();
+        uploadedSongsTable = new javax.swing.JTable();
         albumtextlabel = new javax.swing.JLabel();
         createalbumBtn = new javax.swing.JButton();
         openalbumbtn1 = new javax.swing.JButton();
+        addtoalbumBtn = new javax.swing.JLabel();
+        deletealbumButton = new javax.swing.JLabel();
+        deletesongfromuploadedButton = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setLocation(new java.awt.Point(60, 3));
@@ -1182,7 +1375,7 @@ public class Dashboard extends javax.swing.JFrame {
             }
         });
 
-        albumsongT.setModel(new javax.swing.table.DefaultTableModel(
+        uploadedSongsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
@@ -1198,11 +1391,11 @@ public class Dashboard extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        albumsongT.getTableHeader().setReorderingAllowed(false);
-        jScrollPane4.setViewportView(albumsongT);
-        if (albumsongT.getColumnModel().getColumnCount() > 0) {
-            albumsongT.getColumnModel().getColumn(0).setResizable(false);
-            albumsongT.getColumnModel().getColumn(1).setResizable(false);
+        uploadedSongsTable.getTableHeader().setReorderingAllowed(false);
+        jScrollPane4.setViewportView(uploadedSongsTable);
+        if (uploadedSongsTable.getColumnModel().getColumnCount() > 0) {
+            uploadedSongsTable.getColumnModel().getColumn(0).setResizable(false);
+            uploadedSongsTable.getColumnModel().getColumn(1).setResizable(false);
         }
 
         albumtextlabel.setFont(new java.awt.Font("Ravie", 1, 24)); // NOI18N
@@ -1220,6 +1413,45 @@ public class Dashboard extends javax.swing.JFrame {
         openalbumbtn1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 openalbumbtn1ActionPerformed(evt);
+            }
+        });
+
+        addtoalbumBtn.setBackground(new java.awt.Color(51, 51, 51));
+        addtoalbumBtn.setFont(new java.awt.Font("Verdana", 1, 14)); // NOI18N
+        addtoalbumBtn.setForeground(new java.awt.Color(255, 255, 255));
+        addtoalbumBtn.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        addtoalbumBtn.setText("<- Add to Album");
+        addtoalbumBtn.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        addtoalbumBtn.setOpaque(true);
+        addtoalbumBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                addtoalbumBtnMouseClicked(evt);
+            }
+        });
+
+        deletealbumButton.setBackground(new java.awt.Color(51, 51, 51));
+        deletealbumButton.setFont(new java.awt.Font("Verdana", 1, 14)); // NOI18N
+        deletealbumButton.setForeground(new java.awt.Color(255, 255, 255));
+        deletealbumButton.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        deletealbumButton.setText("Delete Album");
+        deletealbumButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        deletealbumButton.setOpaque(true);
+        deletealbumButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                deletealbumButtonMouseClicked(evt);
+            }
+        });
+
+        deletesongfromuploadedButton.setBackground(new java.awt.Color(51, 51, 51));
+        deletesongfromuploadedButton.setFont(new java.awt.Font("Verdana", 1, 14)); // NOI18N
+        deletesongfromuploadedButton.setForeground(new java.awt.Color(255, 255, 255));
+        deletesongfromuploadedButton.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        deletesongfromuploadedButton.setText("Delete Song");
+        deletesongfromuploadedButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        deletesongfromuploadedButton.setOpaque(true);
+        deletesongfromuploadedButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                deletesongfromuploadedButtonMouseClicked(evt);
             }
         });
 
@@ -1251,16 +1483,10 @@ public class Dashboard extends javax.swing.JFrame {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addComponent(jScrollPane2))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1154, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(playlistname, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(viewprofbtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(logoutbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(playlistname, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(playlistuser, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1271,30 +1497,42 @@ public class Dashboard extends javax.swing.JFrame {
                                 .addComponent(searchbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(deletesongplaybtn, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(341, 341, 341)
-                        .addComponent(favbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(sortcombo, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGap(8, 8, 8)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(createalbumBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(openalbumbtn1, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 655, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(songtextLabel)
-                            .addComponent(addsongtoplay, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(88, 88, 88)))
-                .addGap(32, 32, 32))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(viewprofbtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(logoutbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(341, 341, 341)
+                                .addComponent(favbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(sortcombo, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(32, 32, 32))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1154, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(openalbumbtn1, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(createalbumBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(deletealbumButton, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(addtoalbumBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(18, 18, 18)
+                                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 778, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(addsongtoplay, javax.swing.GroupLayout.DEFAULT_SIZE, 195, Short.MAX_VALUE)
+                                    .addComponent(songtextLabel)
+                                    .addComponent(deletesongfromuploadedButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(playlistname, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(logoutbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1313,37 +1551,48 @@ public class Dashboard extends javax.swing.JFrame {
                             .addComponent(searchbtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 326, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(15, 15, 15))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel10)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(editplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(loadplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(createplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(9, 9, 9)
-                        .addComponent(deleteplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(15, 15, 15))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(albumtextlabel)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(songtextLabel)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(addsongtoplay, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(49, 49, 49)
-                        .addComponent(openalbumbtn1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(createalbumBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(18, 18, 18)
+                                .addComponent(songtextLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(addsongtoplay, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(deletesongfromuploadedButton, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(14, 14, 14)
+                                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(96, 96, 96))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel10)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(editplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(loadplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(createplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(9, 9, 9)
+                                .addComponent(deleteplay, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(15, 15, 15))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                                .addComponent(albumtextlabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(openalbumbtn1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(createalbumBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(4, 4, 4)
+                                .addComponent(deletealbumButton, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(addtoalbumBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -1356,7 +1605,7 @@ public class Dashboard extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 794, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(54, Short.MAX_VALUE))
+                .addContainerGap(53, Short.MAX_VALUE))
         );
 
         pack();
@@ -1479,7 +1728,7 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_playbtnActionPerformed
 
     private void deletesongplaybtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deletesongplaybtnActionPerformed
-        deletesong();
+        deletesongfromuploaded();
     }//GEN-LAST:event_deletesongplaybtnActionPerformed
 
     private void favbtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_favbtnActionPerformed
@@ -1590,6 +1839,23 @@ public class Dashboard extends javax.swing.JFrame {
         loadal();
     }//GEN-LAST:event_openalbumbtn1ActionPerformed
 
+    private void addtoalbumBtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_addtoalbumBtnMouseClicked
+        if(albumT.getSelectedRow() < 0)
+            JOptionPane.showMessageDialog(null, "Please Select an Album First", "No Album Selected",JOptionPane.WARNING_MESSAGE);
+        else if(uploadedSongsTable.getSelectedRow() < 0)    
+            JOptionPane.showMessageDialog(null, "Please Select a Song First", "No Song Selected",JOptionPane.WARNING_MESSAGE);
+        else
+            addtoAlbum();
+    }//GEN-LAST:event_addtoalbumBtnMouseClicked
+
+    private void deletealbumButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deletealbumButtonMouseClicked
+       deletealbum();
+    }//GEN-LAST:event_deletealbumButtonMouseClicked
+
+    private void deletesongfromuploadedButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deletesongfromuploadedButtonMouseClicked
+       deletesongfromuploaded();
+    }//GEN-LAST:event_deletesongfromuploadedButtonMouseClicked
+
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -1601,12 +1867,14 @@ public class Dashboard extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addsongtoplay;
+    private javax.swing.JLabel addtoalbumBtn;
     private javax.swing.JTable albumT;
-    private javax.swing.JTable albumsongT;
     private javax.swing.JLabel albumtextlabel;
     private javax.swing.JButton createalbumBtn;
     private javax.swing.JButton createplay;
+    private javax.swing.JLabel deletealbumButton;
     private javax.swing.JButton deleteplay;
+    private javax.swing.JLabel deletesongfromuploadedButton;
     private javax.swing.JButton deletesongplaybtn;
     private javax.swing.JButton editplay;
     private javax.swing.JButton favbtn;
@@ -1629,6 +1897,7 @@ public class Dashboard extends javax.swing.JFrame {
     private javax.swing.JTable songlistT;
     private javax.swing.JLabel songtextLabel;
     private javax.swing.JComboBox<String> sortcombo;
+    private javax.swing.JTable uploadedSongsTable;
     private javax.swing.JButton viewprofbtn;
     // End of variables declaration//GEN-END:variables
 }

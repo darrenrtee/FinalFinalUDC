@@ -2,12 +2,22 @@
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.sql.Blob;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 /*
@@ -22,41 +32,125 @@ import javax.swing.table.DefaultTableModel;
  */
 public class specificalbumwindow extends javax.swing.JFrame {
     private Album album;
+    private ArrayList<Album> albums;
+    private Dashboard owner;
     
     private Connection connection;
     public specificalbumwindow() {
         initComponents();
     }
-    
+   
     public void initialize(){
+        
          try {
             albumnamelabel.setText(this.album.getName());
             albumartist.setText(this.album.getArtist());
             BufferedImage albumimage = null;
-            File image = album.getFile();
+            File image = new File("Album Cover");
+            Blob imageBlob = album.getFile();
+             try {
+                 InputStream in = imageBlob.getBinaryStream();
+             } catch (SQLException ex) {
+                 Logger.getLogger(specificalbumwindow.class.getName()).log(Level.SEVERE, null, ex);
+             }
+            OutputStream out = new FileOutputStream(image);
+            byte[] bytes = null;
+             try {
+                 bytes = imageBlob.getBytes(1,(int)imageBlob.length());
+             } catch (SQLException ex) {
+                 Logger.getLogger(specificalbumwindow.class.getName()).log(Level.SEVERE, null, ex);
+             }
+            out.write(bytes);
             albumimage = ImageIO.read(image);
             albumimagelabel.setIcon(new ImageIcon(albumimage.getScaledInstance(64, 64,Image.SCALE_SMOOTH)));
             DefaultTableModel modelp = (DefaultTableModel) albumsongsTable.getModel();
             modelp.setRowCount(0);
+            for(int i = 0 ; i < album.getSongs().size(); i++ ){
+                modelp.insertRow(albumsongsTable.getRowCount(), new Object[]{
+                   album.getSongs().get(i).getTitle(),
+                   album.getSongs().get(i).getGenre().getGenre()
+                });
+            }
         } catch (IOException ex) {
             Logger.getLogger(specificalbumwindow.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    /*
-    public void loadalbumsongstable() // LOADS THE SONGS INSIDE THE ALBUM INTO THE TABLE
-    {
-        DefaultTableModel modelp = (DefaultTableModel) songsInTheAlbumTable.getModel();
-        modelp.setRowCount(0);
+    
+    public void playsong(){
+        Musicplayer player = new Musicplayer(this,true);
         
-        for(int x=0; x<getalbum().getSongs().size(); x++)
-        {
-            modelp.insertRow(songsInTheAlbumTable.getRowCount(), new Object[]{
-                getalbum().getSongs().get(x).getTitle(),
-                getalbum().getSongs().get(x).getGenre()
-            });
+        for(int i = 0; i < album.getSongs().size(); i++){
+            if(album.getSongs().get(i).getTitle().equals(albumsongsTable.getValueAt(albumsongsTable.getSelectedRow(), 0).toString()))
+            {
+                player.setsong(album.getSongs().get(i));
+                System.out.println("HELLO");
+            }
+                
         }
+        player.setcon(getcon());
+        player.songtoplay();
+        albumsongsTable.clearSelection();
+        player.setVisible(true);
+        player.stoptimer();
+        player.getwav().stopMusic();
     }
-    */
+    
+    public void deletesong(){
+        try {
+            if(albumsongsTable.getSelectedRow() < 0)
+                JOptionPane.showMessageDialog(null, "Select A Song First Before Deleting!");
+            else{
+                for(Iterator<Song> itr = album.getSongs().iterator(); itr.hasNext();){
+                    Song tempSong = itr.next();
+                    
+                    if(tempSong.getTitle().equals(albumsongsTable.getValueAt(albumsongsTable.getSelectedRow(), 0).toString())){
+                        Statement removeSongAlbumState = getcon().createStatement();
+                        removeSongAlbumState.execute("DELETE FROM databasedc.songalbum WHERE SongID = '"+tempSong.getid()+"'");
+                        
+                        Statement updateSongDetail = getcon().createStatement();
+                        updateSongDetail.execute("UPDATE databasedc.songdetail SET AlbumName = '"+""+"' WHERE SongID = '"+tempSong.getid()+"'");
+                        
+                        itr.remove();
+                        JOptionPane.showMessageDialog(null, "Song has been deleted");
+                        
+                        DefaultTableModel modelp = (DefaultTableModel) albumsongsTable.getModel();
+                        modelp.setRowCount(0);
+                        for(int i = 0 ; i < album.getSongs().size(); i++ ){
+                            modelp.insertRow(albumsongsTable.getRowCount(), new Object[]{
+                               album.getSongs().get(i).getTitle(),
+                               album.getSongs().get(i).getGenre().getGenre()
+                            });
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        
+        for(int i = 0; i < albums.size(); i++){
+            if(albums.get(i).getName().equals(album.getName())){
+                for(int a = 0; a < albums.get(i).getSongs().size();a++){
+                    if(albums.get(i).getSongs().get(a).getTitle().equals(albumsongsTable.getValueAt(albumsongsTable.getSelectedRow(), 0).toString())){
+                        albums.get(i).getSongs().remove(a);
+                        break;
+                    }
+                }
+            }
+        }
+        owner.setAlbums(albums);
+    }
+
+    public void setowner(Dashboard owner){
+        this.owner = owner;
+    }
+    
+    public void setAlbums(ArrayList<Album> albums){
+        this.albums = albums;
+    }
+    
     public void setalbum(Album album){
         this.album = album;
     }
@@ -78,7 +172,8 @@ public class specificalbumwindow extends javax.swing.JFrame {
         albumnamelabel = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         albumsongsTable = new javax.swing.JTable();
-        playalbumsongBtn = new javax.swing.JLabel();
+        AlbumPlayButton = new javax.swing.JLabel();
+        AlbumDeleteButton = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -102,10 +197,29 @@ public class specificalbumwindow extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(albumsongsTable);
 
-        playalbumsongBtn.setText("Play");
-        playalbumsongBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+        AlbumPlayButton.setBackground(new java.awt.Color(51, 51, 51));
+        AlbumPlayButton.setFont(new java.awt.Font("Verdana", 1, 18)); // NOI18N
+        AlbumPlayButton.setForeground(new java.awt.Color(255, 255, 255));
+        AlbumPlayButton.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        AlbumPlayButton.setText("Play");
+        AlbumPlayButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        AlbumPlayButton.setOpaque(true);
+        AlbumPlayButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                playalbumsongBtnMouseClicked(evt);
+                AlbumPlayButtonMouseClicked(evt);
+            }
+        });
+
+        AlbumDeleteButton.setBackground(new java.awt.Color(51, 51, 51));
+        AlbumDeleteButton.setFont(new java.awt.Font("Verdana", 1, 18)); // NOI18N
+        AlbumDeleteButton.setForeground(new java.awt.Color(255, 255, 255));
+        AlbumDeleteButton.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        AlbumDeleteButton.setText("Delete");
+        AlbumDeleteButton.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        AlbumDeleteButton.setOpaque(true);
+        AlbumDeleteButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                AlbumDeleteButtonMouseClicked(evt);
             }
         });
 
@@ -117,14 +231,17 @@ public class specificalbumwindow extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 578, Short.MAX_VALUE)
+                        .addContainerGap())
+                    .addGroup(layout.createSequentialGroup()
                         .addComponent(albumimagelabel, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(albumartist, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(139, 139, 139)
-                        .addComponent(playalbumsongBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 168, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 578, Short.MAX_VALUE))
-                .addContainerGap())
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(AlbumDeleteButton, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(AlbumPlayButton, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(59, 59, 59))))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                     .addGap(143, 143, 143)
@@ -135,13 +252,12 @@ public class specificalbumwindow extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addComponent(albumimagelabel, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(albumartist, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(76, 76, 76)
-                        .addComponent(playalbumsongBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(albumimagelabel, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(albumartist, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(AlbumPlayButton)
+                        .addComponent(AlbumDeleteButton)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 242, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -155,11 +271,16 @@ public class specificalbumwindow extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void playalbumsongBtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_playalbumsongBtnMouseClicked
-        if(albumsongsTable.getSelectedRow() < 0){
-            
-        }
-    }//GEN-LAST:event_playalbumsongBtnMouseClicked
+    private void AlbumPlayButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_AlbumPlayButtonMouseClicked
+        if(albumsongsTable.getSelectedRow() < 0)
+            JOptionPane.showMessageDialog(null, "Please select a song first before playing!", "No song selected", JOptionPane.WARNING_MESSAGE);
+        else
+            playsong();
+    }//GEN-LAST:event_AlbumPlayButtonMouseClicked
+
+    private void AlbumDeleteButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_AlbumDeleteButtonMouseClicked
+        deletesong();
+    }//GEN-LAST:event_AlbumDeleteButtonMouseClicked
 
     /**
      * @param args the command line arguments
@@ -197,11 +318,12 @@ public class specificalbumwindow extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel AlbumDeleteButton;
+    private javax.swing.JLabel AlbumPlayButton;
     private javax.swing.JLabel albumartist;
     private javax.swing.JLabel albumimagelabel;
     private javax.swing.JLabel albumnamelabel;
     private javax.swing.JTable albumsongsTable;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel playalbumsongBtn;
     // End of variables declaration//GEN-END:variables
 }

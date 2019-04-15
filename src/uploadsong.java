@@ -1,6 +1,8 @@
 
 import java.awt.Component;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -133,7 +135,8 @@ public class uploadsong extends javax.swing.JFrame {
     }//GEN-LAST:event_choosefileBTNMouseClicked
 
     private void uploadSongButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_uploadSongButtonActionPerformed
-        uploadsongMethod();
+        Thread thread = new Thread(new upload());
+        thread.start();
     }//GEN-LAST:event_uploadSongButtonActionPerformed
         public void setcon(Connection connection){
             this.connection = connection;
@@ -169,14 +172,15 @@ public class uploadsong extends javax.swing.JFrame {
     public void choosesong() {
             int result = songchooser.showOpenDialog(this);
             fileChosen = songchooser.getSelectedFile();
-            String fileName = "";
+            String fileName[];
             String artist = "";
      
             if(result != JFileChooser.CANCEL_OPTION)
             {
                 if(fileChosen != null){
                     artist = getuser().getusername();
-                    fileName = fileChosen.getName();
+                    String wholename = fileChosen.getName();
+                    fileName = wholename.split("\\.");
                     boolean exists = false;
                     Statement statech;
                     try {
@@ -184,7 +188,7 @@ public class uploadsong extends javax.swing.JFrame {
                         ResultSet resultch = statech.executeQuery("SELECT * FROM databasedc.song");
                         while(resultch.next())
                         {
-                            if(resultch.getString("SongTitle").equals(fileName) && resultch.getInt("UserID") == getuser().getid())
+                            if(resultch.getString("SongTitle").equals(fileName[0]) && resultch.getInt("UserID") == getuser().getid())
                             {
                                 exists = true;
                                 break;
@@ -200,72 +204,90 @@ public class uploadsong extends javax.swing.JFrame {
                     }
                     
                     else
-                        filenameLabel.setText(fileName);
+                        filenameLabel.setText(fileName[0]);
                 }
             }
     }
     
-    public void uploadsongMethod(){
-        if(fileChosen != null) {
-            if(genreCombobox.getSelectedItem().toString().equals("None"))
-                JOptionPane.showMessageDialog(null, "You must select a genre first!", "No genre selected",JOptionPane.INFORMATION_MESSAGE);
-            else {
-                try {
-                    Statement statement = getcon().createStatement();
-                    ResultSet rs = statement.executeQuery("SELECT * FROM databasedc.followuser");
-                    
-                    while(rs.next()){
-                        Statement updateStatement = getcon().createStatement();
-                        updateStatement.execute("UPDATE databasedc.followuser SET Notify = '"+"true"+"' WHERE FollowUserID = '"+getuser().getid()+"'");
+    class upload implements Runnable {
+        @Override
+        public void run() {
+            if(fileChosen != null) {
+                if(genreCombobox.getSelectedItem().toString().equals("None"))
+                    JOptionPane.showMessageDialog(null, "You must select a genre first!", "No genre selected",JOptionPane.INFORMATION_MESSAGE);
+                else {
+                    try {
+                        Statement statement = getcon().createStatement();
+                        ResultSet rs = statement.executeQuery("SELECT * FROM databasedc.followuser");
+
+                        while(rs.next()){
+                            Statement updateStatement = getcon().createStatement();
+                            updateStatement.execute("UPDATE databasedc.followuser SET Notify = '"+"true"+"' WHERE FollowUserID = '"+getuser().getid()+"'");
+                        }
+                        FileInputStream fis = null;
+                        try {
+                            fis = new FileInputStream(fileChosen);
+                        } catch (FileNotFoundException ex) {
+                            Logger.getLogger(uploadsong.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
+                        String fileName[] = fileChosen.getName().split("\\.");
+
+                        PreparedStatement insertSongStatement = getcon().prepareStatement("INSERT INTO databasedc.song(SongBlob, SongTitle, SongArtist, SongGenre, UserID, UploadedDate) VALUES(?, ?, ?, ?, ?, ?)");
+                        insertSongStatement.setBinaryStream(1, fis, (int) fileChosen.length());
+                        insertSongStatement.setString(2, fileName[0]);
+                        insertSongStatement.setString(3, getuser().getusername());
+                        insertSongStatement.setString(4, genreCombobox.getSelectedItem().toString());
+                        insertSongStatement.setInt(5, getuser().getid());
+                        insertSongStatement.setString(6, datefor.format(new Date()));
+
+                        insertSongStatement.execute();
+
+                        Statement getSongID = getcon().createStatement();
+                        ResultSet songIDrs = getSongID.executeQuery("SELECT MAX(SongID) FROM databasedc.song");
+
+                        int songIDmax = 0;
+
+                        while(songIDrs.next()){
+                            songIDmax = songIDrs.getInt("MAX(SongID)");
+                        }
+
+                        Director build = new Director();
+                        if(genreCombobox.getSelectedItem().toString().equals("Happy")){
+                            build.setSongBuilder(new HappyBuilder());
+                            build.constructSong(songIDmax, "", fileName[0], getuser().getusername());
+                        }
+                        else if(genreCombobox.getSelectedItem().toString().equals("Sad")){
+                            build.setSongBuilder(new SadBuilder());
+                            build.constructSong(songIDmax, "", fileName[0], getuser().getusername());
+                        }
+                        else if(genreCombobox.getSelectedItem().toString().equals("Senti")){
+                            build.setSongBuilder(new SentiBuilder());
+                            build.constructSong(songIDmax, "", fileName[0], getuser().getusername());
+                        }
+                        else{
+                            build.setSongBuilder(new NoBuilder());
+                            build.constructSong(songIDmax, "", fileName[0], getuser().getusername());
+                        }
+
+                        songs.add(build.getSong());
+                        owner.setYoursongs(songs);
+                    } catch (SQLException ex) {
+                        Logger.getLogger(uploadsong.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    
-                    PreparedStatement insertSongStatement = getcon().prepareStatement("INSERT INTO databasedc.song(SongBlob, SongTitle, SongArtist, SongGenre, UserID, UploadedDate) VALUES(?, ?, ?, ?, ?, ?)");
-                    insertSongStatement.setBlob(1, INSERTBLOBHERE);
-                    insertSongStatement.setString(2, fileChosen.getName());
-                    insertSongStatement.setString(3, getuser().getusername());
-                    insertSongStatement.setString(4, genreCombobox.getSelectedItem().toString());
-                    insertSongStatement.setInt(5, getuser().getid());
-                    insertSongStatement.setString(6, datefor.format(new Date()));
-                    
-                    insertSongStatement.execute();
-                    
-                    Statement getSongID = getcon().createStatement();
-                    ResultSet songIDrs = getSongID.executeQuery("SELECT MAX(SongID) FROM databasedc.song");
-                    
-                    int songIDmax = 0;
-                    
-                    while(songIDrs.next()){
-                        songIDmax = songIDrs.getInt("MAX(SongID)");
-                    }
-                    
-                    Director build = new Director();
-                    if(genreCombobox.getSelectedItem().toString().equals("Happy")){
-                        build.setSongBuilder(new HappyBuilder());
-                        build.constructSong(songIDmax, "", fileChosen.getName(), getuser().getusername());
-                    }
-                    else if(genreCombobox.getSelectedItem().toString().equals("Sad")){
-                        build.setSongBuilder(new SadBuilder());
-                        build.constructSong(songIDmax, "", fileChosen.getName(), getuser().getusername());
-                    }
-                    else if(genreCombobox.getSelectedItem().toString().equals("Senti")){
-                        build.setSongBuilder(new SentiBuilder());
-                        build.constructSong(songIDmax, "", fileChosen.getName(), getuser().getusername());
-                    }
-                    else{
-                        build.setSongBuilder(new NoBuilder());
-                        build.constructSong(songIDmax, "", fileChosen.getName(), getuser().getusername());
-                    }
-                    
-                    songs.add(build.getSong());
-                    owner.setYoursongs(songs);
-                } catch (SQLException ex) {
-                    Logger.getLogger(uploadsong.class.getName()).log(Level.SEVERE, null, ex);
+                    JOptionPane.showMessageDialog(null, "Song Uploaded Successfully", "Song uploaded",JOptionPane.INFORMATION_MESSAGE);
+                    owner.updateuploadedsongstable();
+                    closewindow();
                 }
-            }
         }
-        
+            
         else
             JOptionPane.showMessageDialog(null, "You must upload a song first!", "No file uploaded",JOptionPane.INFORMATION_MESSAGE);
+        }
+        
+    }
+    public void closewindow(){
+        this.dispose();
     }
     
     public static void main(String args[]) {

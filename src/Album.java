@@ -1,4 +1,5 @@
 import java.io.File;
+import java.sql.Blob;
 import java.util.ArrayList;
 
 public class Album 
@@ -7,15 +8,15 @@ public class Album
     private int albumid;
     private String name;
     private String date;
-    private File file;
+    private Blob picture;
     private String artist;
     
-    public Album(int albumtid ,String name, String date,File file,String artist){
+    public Album(int albumid ,String name, String date,Blob file,String artist){
         album = new ArrayList();
-        this.album = album;
+        this.albumid = albumid;
         this.name = name;
         this.date = date;
-        this.file = file;
+        this.picture = file;
         this.artist = artist;
     }
     
@@ -51,12 +52,12 @@ public class Album
         return this.album;
     }
     
-    public File getFile(){
-        return this.file;
+    public Blob getFile(){
+        return this.picture;
     }
     
-    public void setFile(File file){
-        this.file = file;
+    public void setFile(Blob file){
+        this.picture = file;
     }
 
     public String getArtist() {

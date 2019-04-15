@@ -15,16 +15,14 @@ public class Stop
     
     public void stopMusic(StopModel stop)
     {
-        if(stop.getisPlaying()){
-            stop.setpausetime(0);
-            stop.getclip().stop();
-            stop.setisPlaying(false);
-            stop.setisPaused(true);
-            this.pausem = new PauseModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
-            this.playm = new PlayModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
-            this.bkm = new BKModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
-            this.ffm = new FFModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
-        }
+        stop.setpausetime(0);
+        stop.getclip().stop();
+        stop.setisPlaying(false);
+        stop.setisPaused(true);
+        this.pausem = new PauseModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
+        this.playm = new PlayModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
+        this.bkm = new BKModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
+        this.ffm = new FFModel(stop.getclip(), stop.getpausetime(), stop.getisPlaying(), stop.getisPaused());
     }
     
     public PauseModel getpm()

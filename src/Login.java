@@ -21,8 +21,6 @@ public class Login extends javax.swing.JFrame {
     public Login() {
         initComponents();
         connection.createConnection();
-        mainicon();
-        setghost();
     }
     
     public void clearlog()
@@ -103,11 +101,11 @@ public class Login extends javax.swing.JFrame {
             stateCheck.close();
             JOptionPane.showMessageDialog(null, "Log In Successful!"); 
             this.dispose();
-            Dashboard musicplayer = new Dashboard();
-            musicplayer.setuser(new Guest(guestid, guestdate));
-            musicplayer.setcon(connection.getconnect());
-            musicplayer.loadalbumtable();
-            musicplayer.setVisible(true);
+            Dashboard dashboard = new Dashboard();
+            dashboard.setuser(new Guest(guestid, guestdate));
+            dashboard.setcon(connection.getconnect());
+            dashboard.initializePlayer();
+            dashboard.setVisible(true);
             
         } catch (SQLException ex) {
             Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
@@ -118,33 +116,45 @@ public class Login extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jMenuItem1 = new javax.swing.JMenuItem();
         jPanel2 = new javax.swing.JPanel();
         Musicplayericon = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        musicusericon = new javax.swing.JLabel();
         AccountNameField = new javax.swing.JTextField();
-        musicpassicon = new javax.swing.JLabel();
         PasswordField = new javax.swing.JPasswordField();
-        loginbtn = new javax.swing.JButton();
-        regbtn = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        loginguestbtn = new javax.swing.JButton();
         showpass = new javax.swing.JCheckBox();
         exitButton = new javax.swing.JLabel();
+        AccountName = new javax.swing.JLabel();
+        Password = new javax.swing.JLabel();
+        LoginAsGuestQuestion = new javax.swing.JLabel();
+        jSeparator1 = new javax.swing.JSeparator();
+        CreateNewAccountQuestion = new javax.swing.JLabel();
+        LoginAsGuestButton = new javax.swing.JLabel();
+        LoginButton = new javax.swing.JLabel();
+        CreateNewAccountButton = new javax.swing.JLabel();
+
+        jMenuItem1.setText("jMenuItem1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setLocation(new java.awt.Point(700, 200));
         setUndecorated(true);
         setResizable(false);
 
-        jPanel2.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel2.setBackground(new java.awt.Color(25, 25, 25));
+        jPanel2.setMaximumSize(new java.awt.Dimension(65, 23));
+        jPanel2.setMinimumSize(new java.awt.Dimension(65, 23));
+        jPanel2.setPreferredSize(new java.awt.Dimension(65, 23));
 
-        jLabel2.setFont(new java.awt.Font("Harlow Solid Italic", 2, 24)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(255, 51, 255));
+        Musicplayericon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Icons/MusicNinjaLogo.png"))); // NOI18N
+
+        jLabel2.setFont(new java.awt.Font("Verdana", 1, 36)); // NOI18N
+        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText("Music Player");
+        jLabel2.setText("Music Ninja");
 
-        AccountNameField.setFont(new java.awt.Font("Tahoma", 2, 18)); // NOI18N
+        AccountNameField.setBackground(new java.awt.Color(25, 25, 25));
+        AccountNameField.setFont(new java.awt.Font("Verdana", 0, 12)); // NOI18N
+        AccountNameField.setForeground(new java.awt.Color(255, 255, 255));
         AccountNameField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 AccountNameFieldFocusGained(evt);
@@ -159,7 +169,9 @@ public class Login extends javax.swing.JFrame {
             }
         });
 
-        PasswordField.setFont(new java.awt.Font("Tahoma", 2, 18)); // NOI18N
+        PasswordField.setBackground(new java.awt.Color(25, 25, 25));
+        PasswordField.setFont(new java.awt.Font("Verdana", 0, 12)); // NOI18N
+        PasswordField.setForeground(new java.awt.Color(255, 255, 255));
         PasswordField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 PasswordFieldFocusGained(evt);
@@ -169,45 +181,9 @@ public class Login extends javax.swing.JFrame {
             }
         });
 
-        loginbtn.setText("Log In");
-        loginbtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                loginbtnActionPerformed(evt);
-            }
-        });
-        loginbtn.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                loginbtnKeyPressed(evt);
-            }
-        });
-
-        regbtn.setText("Register");
-        regbtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                regbtnActionPerformed(evt);
-            }
-        });
-        regbtn.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                regbtnKeyPressed(evt);
-            }
-        });
-
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText("or");
-
-        loginguestbtn.setText("Log In as Guest");
-        loginguestbtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                loginguestbtnActionPerformed(evt);
-            }
-        });
-        loginguestbtn.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                loginguestbtnKeyPressed(evt);
-            }
-        });
-
+        showpass.setBackground(new java.awt.Color(25, 25, 25));
+        showpass.setFont(new java.awt.Font("Verdana", 0, 11)); // NOI18N
+        showpass.setForeground(new java.awt.Color(255, 255, 255));
         showpass.setText(" Show Password");
         showpass.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -215,7 +191,8 @@ public class Login extends javax.swing.JFrame {
             }
         });
 
-        exitButton.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        exitButton.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        exitButton.setForeground(new java.awt.Color(255, 255, 255));
         exitButton.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         exitButton.setText("X");
         exitButton.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -224,196 +201,194 @@ public class Login extends javax.swing.JFrame {
             }
         });
 
+        AccountName.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        AccountName.setForeground(new java.awt.Color(255, 255, 255));
+        AccountName.setText("Account name");
+
+        Password.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        Password.setForeground(new java.awt.Color(255, 255, 255));
+        Password.setText("Password");
+
+        LoginAsGuestQuestion.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        LoginAsGuestQuestion.setForeground(new java.awt.Color(255, 255, 255));
+        LoginAsGuestQuestion.setText("Want to try Music Ninja first?");
+
+        CreateNewAccountQuestion.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        CreateNewAccountQuestion.setForeground(new java.awt.Color(255, 255, 255));
+        CreateNewAccountQuestion.setText("Don't have a Music Ninja account?");
+
+        LoginAsGuestButton.setBackground(new java.awt.Color(51, 51, 51));
+        LoginAsGuestButton.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        LoginAsGuestButton.setForeground(new java.awt.Color(255, 255, 255));
+        LoginAsGuestButton.setText(" LOGIN AS GUEST");
+        LoginAsGuestButton.setOpaque(true);
+        LoginAsGuestButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                LoginAsGuestButtonMouseClicked(evt);
+            }
+        });
+
+        LoginButton.setBackground(new java.awt.Color(51, 51, 51));
+        LoginButton.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        LoginButton.setForeground(new java.awt.Color(255, 255, 255));
+        LoginButton.setText(" LOGIN");
+        LoginButton.setOpaque(true);
+        LoginButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                LoginButtonMouseClicked(evt);
+            }
+        });
+
+        CreateNewAccountButton.setBackground(new java.awt.Color(51, 51, 51));
+        CreateNewAccountButton.setFont(new java.awt.Font("Verdana", 0, 18)); // NOI18N
+        CreateNewAccountButton.setForeground(new java.awt.Color(255, 255, 255));
+        CreateNewAccountButton.setText(" CREATE A NEW ACCOUNT..");
+        CreateNewAccountButton.setOpaque(true);
+        CreateNewAccountButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                CreateNewAccountButtonMouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(loginguestbtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(regbtn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(loginbtn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(82, 82, 82)
+                .addGap(0, 0, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addContainerGap(89, Short.MAX_VALUE))
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(Musicplayericon, javax.swing.GroupLayout.PREFERRED_SIZE, 135, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(exitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))))
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
+                    .addComponent(LoginAsGuestQuestion, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(CreateNewAccountQuestion, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(musicpassicon, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(musicusericon, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(LoginAsGuestButton, javax.swing.GroupLayout.PREFERRED_SIZE, 493, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(CreateNewAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, 493, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(30, 30, 30))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(58, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(showpass)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(AccountNameField)
-                            .addComponent(PasswordField))
-                        .addGap(18, 18, 18))))
+                    .addComponent(exitButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addGap(42, 42, 42)
+                                .addComponent(Password)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(showpass)
+                                    .addComponent(PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, 690, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 332, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                                .addComponent(AccountName)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(AccountNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 690, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addGap(93, 93, 93)
+                                        .addComponent(Musicplayericon)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jLabel2)))))
+                        .addGap(37, 37, 37))))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(Musicplayericon, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(exitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(exitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(27, 27, 27)
+                        .addComponent(jLabel2))
+                    .addComponent(Musicplayericon))
+                .addGap(38, 38, 38)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(AccountNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(AccountName))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
-                .addGap(26, 26, 26)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(AccountNameField, javax.swing.GroupLayout.DEFAULT_SIZE, 54, Short.MAX_VALUE)
-                    .addComponent(musicusericon, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(Password))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(musicpassicon, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(PasswordField, javax.swing.GroupLayout.DEFAULT_SIZE, 54, Short.MAX_VALUE))
-                .addGap(2, 2, 2)
                 .addComponent(showpass)
-                .addGap(18, 18, 18)
-                .addComponent(loginbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(regbtn, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(loginguestbtn, javax.swing.GroupLayout.DEFAULT_SIZE, 45, Short.MAX_VALUE)
-                .addContainerGap())
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(17, 17, 17)
+                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(15, 15, 15)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(LoginAsGuestQuestion)
+                    .addComponent(LoginAsGuestButton, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(15, 15, 15)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(CreateNewAccountQuestion)
+                    .addComponent(CreateNewAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(85, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 922, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE)
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void AccountNameFieldFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_AccountNameFieldFocusGained
-        if(AccountNameField.getForeground().equals(Color.GRAY)){
-            AccountNameField.setText("");
-            AccountNameField.setForeground(Color.BLACK);
-        }
-    }//GEN-LAST:event_AccountNameFieldFocusGained
-
-    private void AccountNameFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_AccountNameFieldFocusLost
-        if(AccountNameField.getText().equals("")){
-            AccountNameField.setText("Enter Your Username");
-            AccountNameField.setForeground(Color.GRAY);
-        }
-    }//GEN-LAST:event_AccountNameFieldFocusLost
-
-    private void PasswordFieldFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_PasswordFieldFocusGained
-        if(PasswordField.getForeground().equals(Color.GRAY)){
-            if(showpass.isSelected())
-                PasswordField.setEchoChar((char)0);
-            else
-                PasswordField.setEchoChar('*');
-            
-            PasswordField.setText("");
-            PasswordField.setForeground(Color.BLACK);
-        }
-    }//GEN-LAST:event_PasswordFieldFocusGained
-
-    private void PasswordFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_PasswordFieldFocusLost
-        if(PasswordField.getText().equals("")){
-            PasswordField.setEchoChar((char)0);
-            PasswordField.setText("Enter Password");
-            PasswordField.setForeground(Color.GRAY);
-        }
-    }//GEN-LAST:event_PasswordFieldFocusLost
+    private void exitButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_exitButtonMouseClicked
+        System.exit(0);
+    }//GEN-LAST:event_exitButtonMouseClicked
 
     private void showpassActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showpassActionPerformed
+
         if(!PasswordField.getForeground().equals(Color.GRAY))
         {
             if(showpass.isSelected())
-               PasswordField.setEchoChar((char)0);
+            PasswordField.setEchoChar((char)0);
             else
-               PasswordField.setEchoChar('*');
+            PasswordField.setEchoChar('\u25CF');
         }
     }//GEN-LAST:event_showpassActionPerformed
 
-    private void regbtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_regbtnActionPerformed
-        Signup sign = new Signup(this, true);
-        sign.setcon(connection.getconnect());
-        sign.setVisible(true);
-    }//GEN-LAST:event_regbtnActionPerformed
+    private void PasswordFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_PasswordFieldFocusLost
 
-    private void loginbtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginbtnActionPerformed
-        logToPlayer();
-    }//GEN-LAST:event_loginbtnActionPerformed
+    }//GEN-LAST:event_PasswordFieldFocusLost
 
-    private void loginguestbtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginguestbtnActionPerformed
-        loginguest();
-    }//GEN-LAST:event_loginguestbtnActionPerformed
-
-    private void loginguestbtnKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_loginguestbtnKeyPressed
-        loginguest();
-    }//GEN-LAST:event_loginguestbtnKeyPressed
-
-    private void loginbtnKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_loginbtnKeyPressed
-        logToPlayer();
-    }//GEN-LAST:event_loginbtnKeyPressed
-
-    private void regbtnKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_regbtnKeyPressed
-        Signup sign = new Signup(this, true);
-        sign.setcon(connection.getconnect());
-        sign.setVisible(true);
-    }//GEN-LAST:event_regbtnKeyPressed
+    private void PasswordFieldFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_PasswordFieldFocusGained
+        
+    }//GEN-LAST:event_PasswordFieldFocusGained
 
     private void AccountNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AccountNameFieldActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_AccountNameFieldActionPerformed
 
-    private void exitButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_exitButtonMouseClicked
-        System.exit(0);
-    }//GEN-LAST:event_exitButtonMouseClicked
+    private void AccountNameFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_AccountNameFieldFocusLost
+       
+    }//GEN-LAST:event_AccountNameFieldFocusLost
 
-    public void setghost()
-    {
-        AccountNameField.setText("Enter Your Uesrname");
-        AccountNameField.setForeground(Color.GRAY);
-        PasswordField.setEchoChar((char)0);
-        PasswordField.setText("Enter Your Password");
-        PasswordField.setForeground(Color.GRAY);
-    }
+    private void AccountNameFieldFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_AccountNameFieldFocusGained
+       
+    }//GEN-LAST:event_AccountNameFieldFocusGained
+
+    private void LoginAsGuestButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_LoginAsGuestButtonMouseClicked
+       loginguest();
+    }//GEN-LAST:event_LoginAsGuestButtonMouseClicked
+
+    private void LoginButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_LoginButtonMouseClicked
+        logToPlayer();
+    }//GEN-LAST:event_LoginButtonMouseClicked
+
+    private void CreateNewAccountButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_CreateNewAccountButtonMouseClicked
+        Signup sign = new Signup(this, true);
+        sign.setcon(connection.getconnect());
+        sign.setVisible(true);
+    }//GEN-LAST:event_CreateNewAccountButtonMouseClicked
+
     
-    public void mainicon()
-    {
-        BufferedImage imgmusic = null;
-        BufferedImage imguser = null;
-        BufferedImage imgpass = null;
-        
-        try {
-            imgmusic = ImageIO.read(getClass().getResource("/Icons/musicplayer.png"));
-            imguser = ImageIO.read(getClass().getResource("/Icons/musicuser.png"));
-            imgpass = ImageIO.read(getClass().getResource("/Icons/musicpass.png"));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-                
-        Musicplayericon.setIcon(new ImageIcon(imgmusic.getScaledInstance(135, 113, Image.SCALE_SMOOTH)));
-        musicusericon.setIcon(new ImageIcon(imguser.getScaledInstance(70, 54, Image.SCALE_SMOOTH)));
-        musicpassicon.setIcon(new ImageIcon(imgpass.getScaledInstance(70, 54, Image.SCALE_SMOOTH)));
-    }
     
     public static void main(String args[]) {
 
@@ -425,18 +400,21 @@ public class Login extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel AccountName;
     private javax.swing.JTextField AccountNameField;
+    private javax.swing.JLabel CreateNewAccountButton;
+    private javax.swing.JLabel CreateNewAccountQuestion;
+    private javax.swing.JLabel LoginAsGuestButton;
+    private javax.swing.JLabel LoginAsGuestQuestion;
+    private javax.swing.JLabel LoginButton;
     private javax.swing.JLabel Musicplayericon;
+    private javax.swing.JLabel Password;
     private javax.swing.JPasswordField PasswordField;
     private javax.swing.JLabel exitButton;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JButton loginbtn;
-    private javax.swing.JButton loginguestbtn;
-    private javax.swing.JLabel musicpassicon;
-    private javax.swing.JLabel musicusericon;
-    private javax.swing.JButton regbtn;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JCheckBox showpass;
     // End of variables declaration//GEN-END:variables
 }
